@@ -1,0 +1,31 @@
+@model Nop.Plugin.Widgets.NewsletterPopup.Models.ConfigurationModel
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="NewsletterPopup" asp-action="Configure" method="post">
+    <div class="card card-default">
+        <div class="card-body">
+            <div class="form-group">
+                <label>Καθυστέρηση εμφάνισης (ms)</label>
+                <input asp-for="DisplayDelay" class="form-control" />
+            </div>
+
+            <nop-tabs id="newsletter-popup-tabs">
+                @for (int i = 0; i < Model.Locales.Count; i++)
+                {
+                    <nop-tab asp-name="tab-@Model.Locales[i].LanguageId" asp-title="@Model.Locales[i].LanguageId.ToString()">
+                        <div class="form-group">
+                            <label>HTML Περιεχόμενο</label>
+                            <nop-editor asp-for="Locales[i].HtmlContent" asp-template="RichEditor" />
+                        </div>
+                    </nop-tab>
+                }
+            </nop-tabs>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Αποθήκευση</button>
+    </div>
+</form>

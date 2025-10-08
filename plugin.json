@@ -1,0 +1,13 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Newsletter Popup",
+  "SystemName": "Widgets.NewsletterPopup",
+  "Version": "4.80.3",
+  "SupportedVersions": [
+    "4.80"
+  ],
+  "Author": "Nikos Methenitis - nmethenitis@gmail.com",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.NewsletterPopup.dll",
+  "Description": "A multilingual popup widget for newsletter subscription in nopCommerce."
+}
