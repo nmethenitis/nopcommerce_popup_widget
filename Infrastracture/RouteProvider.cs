@@ -8,7 +8,7 @@ public class RouteProvider : IRouteProvider {
 
     public void RegisterRoutes(IEndpointRouteBuilder endpointRouteBuilder) {
         endpointRouteBuilder.MapControllerRoute(
-           name: "SubscribeNewsletter",
+           name: "NewsletterPopupWidget.SubscribeNewsletter",
            pattern: "popup-newsletter/subscribe",
            defaults: new { controller = "NewsletterPopupPublic", action = "SubscribeToNewsletter" });
     }

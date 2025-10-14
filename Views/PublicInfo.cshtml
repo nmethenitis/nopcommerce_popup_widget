@@ -8,7 +8,7 @@
         <button id="close-popup">✕</button>
         @Html.Raw(html)
         @if(ShowNewsletterForm) {
-            <form id="custom-newsletter-form" autocomplete="off" style="margin-top:20px;">
+            <div id="custom-newsletter-form" style="margin-top:20px;">
                 <input type="email"
                        id="custom-newsletter-email"
                        name="email"
@@ -16,7 +16,7 @@
                        required
                        style="width:70%;" />
                 <button type="submit" id="custom-newsletter-submit" class="button-1">Εγγραφή</button>
-            </form>
+            </div>
         }
         <div id="custom-newsletter-result" style="margin-top:8px;"></div>
     </div>

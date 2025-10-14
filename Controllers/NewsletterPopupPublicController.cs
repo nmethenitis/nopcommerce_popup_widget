@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Core.Domain.Stores;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Web.Framework.Controllers;
@@ -9,11 +11,13 @@ public class NewsletterPopupPublicController : BasePluginController {
     private readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
     private readonly ILocalizationService _localizationService;
     private readonly IStoreContext _storeContext;
+    IWorkflowMessageService _workflowMessageService;
 
-    public NewsletterPopupPublicController(INewsLetterSubscriptionService newsLetterSubscriptionService, ILocalizationService localizationService, IStoreContext storeContext) {
+    public NewsletterPopupPublicController(INewsLetterSubscriptionService newsLetterSubscriptionService, ILocalizationService localizationService, IStoreContext storeContext, IWorkflowMessageService workflowMessageService) {
         _newsLetterSubscriptionService = newsLetterSubscriptionService;
         _localizationService = localizationService;
         _storeContext = storeContext;
+        _workflowMessageService = workflowMessageService;
     }
 
     [HttpPost]
@@ -26,12 +30,14 @@ public class NewsletterPopupPublicController : BasePluginController {
             var storeId = _storeContext.GetCurrentStore().Id;
             var existing = await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndStoreIdAsync(email, storeId);
             if (existing == null) {
-                await _newsLetterSubscriptionService.InsertNewsLetterSubscriptionAsync(new Nop.Core.Domain.Messages.NewsLetterSubscription {
-                    Active = true,
+                var subscription = new Nop.Core.Domain.Messages.NewsLetterSubscription {
+                    Active = false,
                     Email = email,
                     StoreId = storeId,
                     CreatedOnUtc = DateTime.UtcNow
-                });
+                };
+                await _newsLetterSubscriptionService.InsertNewsLetterSubscriptionAsync(subscription);
+                await _workflowMessageService.SendNewsLetterSubscriptionActivationMessageAsync(subscription);
             } else if (!existing.Active) {
                 existing.Active = true;
                 await _newsLetterSubscriptionService.UpdateNewsLetterSubscriptionAsync(existing);

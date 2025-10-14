@@ -32,7 +32,7 @@
 
     // AJAX submit - με jQuery
     if (window.jQuery) {
-      jQuery(document).on('submit', '#custom-newsletter-form', function (event) {
+      jQuery(document).on('click', '#custom-newsletter-submit', function (event) {
         event.preventDefault();
         let email = jQuery('#custom-newsletter-email').val();
 
