@@ -1,4 +1,5 @@
-using Nop.Core;
+﻿using Nop.Core;
+using Nop.Services.Cms;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
@@ -14,26 +15,21 @@ namespace Nop.Plugin.Widgets.NewsletterPopup
         private readonly IWebHelper _webHelper;
         private readonly ILocalizationService _localizationService;
 
-        public NewsletterPopupPlugin(ISettingService settingService,
-            IWebHelper webHelper,
-            ILocalizationService localizationService)
-        {
+        public bool HideInWidgetList => false;
+
+        public NewsletterPopupPlugin(ISettingService settingService,IWebHelper webHelper, ILocalizationService localizationService){
             _settingService = settingService;
             _webHelper = webHelper;
             _localizationService = localizationService;
         }
 
-        public Task<IList<string>> GetWidgetZonesAsync() =>
-            Task.FromResult<IList<string>>(new List<string> { PublicWidgetZones.BodyEndHtmlTagAfter });
+        public Task<IList<string>> GetWidgetZonesAsync() => Task.FromResult<IList<string>>(new List<string> { PublicWidgetZones.BodyEndHtmlTagBefore });
 
-        public string GetWidgetViewComponentName(string widgetZone) => "NewsletterPopup";
-
-        public override async Task InstallAsync()
-        {
+        public override async Task InstallAsync(){
             var settings = new NewsletterPopupSettings
             {
-                DisplayDelay = 2000,
-                DefaultHtmlContent = "<h2>Εγγραφή στο Newsletter</h2><p>Μάθε πρώτος για νέες προσφορές!</p>"
+                ShowNewsletterForm = true,
+                HtmlContent = "<h2>Εγγραφή στο Newsletter</h2><p>Μάθε πρώτος για νέες προσφορές!</p>"
             };
             await _settingService.SaveSettingAsync(settings);
 
@@ -41,8 +37,8 @@ namespace Nop.Plugin.Widgets.NewsletterPopup
             {
                 ["Plugins.Widgets.NewsletterPopup.Fields.HtmlContent"] = "HTML περιεχόμενο",
                 ["Plugins.Widgets.NewsletterPopup.Fields.HtmlContent.Hint"] = "Το HTML περιεχόμενο του popup (πολυγλωσσικό).",
-                ["Plugins.Widgets.NewsletterPopup.Fields.DisplayDelay"] = "Καθυστέρηση εμφάνισης (ms)",
-                ["Plugins.Widgets.NewsletterPopup.Fields.DisplayDelay.Hint"] = "Χρόνος καθυστέρησης σε milliseconds πριν εμφανιστεί το popup."
+                ["Plugins.Widgets.NewsletterPopup.Fields.ShowNewsletterForm"] = "Εμφάνιση φόρμας Newsletter",
+                ["Plugins.Widgets.NewsletterPopup.Fields.ShowNewsletterForm.Hint"] = "Αν θέλεις να εμφανίζεται η φόρμα για το newsletter, επίλεξέ το"
             });
 
             await base.InstallAsync();
@@ -57,12 +53,9 @@ namespace Nop.Plugin.Widgets.NewsletterPopup
 
         public override string GetConfigurationPageUrl()
             => $"{_webHelper.GetStoreLocation()}Admin/NewsletterPopup/Configure";
-    }
 
-    public class NewsletterPopupSettings : ISettings
-    {
-        public int DisplayDelay { get; set; }
-        // DefaultHtmlContent used as a fallback; localized content stored via localization service
-        public string DefaultHtmlContent { get; set; }
+        public Type GetWidgetViewComponent(string widgetZone) {
+            return typeof(Components.NewsletterPopupViewComponent);
+        }
     }
 }

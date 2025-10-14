@@ -2,30 +2,60 @@
 @{
     Layout = "_ConfigurePlugin";
 }
-
+@await Component.InvokeAsync(typeof(StoreScopeConfigurationViewComponent))
 <form asp-controller="NewsletterPopup" asp-action="Configure" method="post">
-    <div class="card card-default">
-        <div class="card-body">
-            <div class="form-group">
-                <label>Καθυστέρηση εμφάνισης (ms)</label>
-                <input asp-for="DisplayDelay" class="form-control" />
-            </div>
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-body">
+                <p>Newsletter Popup Settings</p>
 
-            <nop-tabs id="newsletter-popup-tabs">
-                @for (int i = 0; i < Model.Locales.Count; i++)
-                {
-                    <nop-tab asp-name="tab-@Model.Locales[i].LanguageId" asp-title="@Model.Locales[i].LanguageId.ToString()">
-                        <div class="form-group">
-                            <label>HTML Περιεχόμενο</label>
-                            <nop-editor asp-for="Locales[i].HtmlContent" asp-template="RichEditor" />
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-override-store-checkbox asp-for="ShowNewsletterForm_OverrideForStore" asp-input="ShowNewsletterForm" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="ShowNewsletterForm" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ShowNewsletterForm" />
+                        <span asp-validation-for="ShowNewsletterForm"></span>
+                    </div>
+                </div>
+                @(await Html.LocalizedEditorAsync<ConfigurationModel, ConfigurationModel.ConfigurationLocalizedModel>("plugin-settings-localized",
+                @<div>
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="HtmlContent_OverrideForStore" asp-input="@Model.Locales[item].HtmlContent" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="@Model.Locales[item].HtmlContent" />
                         </div>
-                    </nop-tab>
-                }
-            </nop-tabs>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="@Model.Locales[item].HtmlContent" asp-template="RichEditor" />
+                            <span asp-validation-for="@Model.Locales[item].HtmlContent"></span>
+                        </div>
+                    </div>
+                    <input type="hidden" asp-for="@Model.Locales[item].LanguageId" />
+                </div>
+                    ,
+                @<div>
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="HtmlContent_OverrideForStore" asp-input="HtmlContent" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="HtmlContent" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="HtmlContent" asp-template="RichEditor" />
+                            <span asp-validation-for="HtmlContent"></span>
+                        </div>
+                    </div>
+                </div>
+                    ,
+                    //localizable settings per store (overridden store settings) are not supported yet
+                    true
+                    ))               
+            </div>
+            <div class="form-group row">
+                <div class="col-md-9 offset-md-3">
+                    <button type="submit" name="save" class="btn btn-primary">@T("Admin.Common.Save")</button>
+                </div>
+            </div>
         </div>
-    </div>
-
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Αποθήκευση</button>
     </div>
 </form>

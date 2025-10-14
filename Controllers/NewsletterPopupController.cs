@@ -1,80 +1,75 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Plugin.Widgets.NewsletterPopup.Models;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Web.Areas.Admin.Controllers;
+using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
+using Nop.Web.Framework.Mvc.Filters;
 using System.Threading.Tasks;
 
-namespace Nop.Plugin.Widgets.NewsletterPopup.Controllers
-{
-    [Area(AreaNames.Admin)]
-    public class NewsletterPopupController : BasePluginController
-    {
-        private readonly ISettingService _settingService;
-        private readonly ILocalizationService _localizationService;
-        private readonly IPermissionService _permissionService;
-        private readonly IWorkContext _workContext;
+namespace Nop.Plugin.Widgets.NewsletterPopup.Controllers;
+[AuthorizeAdmin]
+[Area(AreaNames.ADMIN)]
+[AutoValidateAntiforgeryToken]
+public class NewsletterPopupController : BaseAdminController {
+    private readonly ISettingService _settingService;
+    private readonly ILocalizationService _localizationService;
+    protected readonly INotificationService _notificationService;
+    protected readonly IStoreContext _storeContext;
+    protected readonly ILanguageService _languageService;
 
-        public NewsletterPopupController(
-            ISettingService settingService,
-            ILocalizationService localizationService,
-            IPermissionService permissionService,
-            IWorkContext workContext)
-        {
-            _settingService = settingService;
-            _localization_service = localizationService;
-            _permissionService = permissionService;
-            _workContext = workContext;
+    public NewsletterPopupController(ISettingService settingService, ILocalizationService localizationService, IStoreContext storeContext, ILanguageService languageService, INotificationService notificationService) {
+        _settingService = settingService;
+        _localizationService = localizationService;
+        _storeContext = storeContext;
+        _languageService = languageService;
+        _notificationService = notificationService;
+    }
+
+    [CheckPermission(StandardPermission.Configuration.MANAGE_WIDGETS)]
+    public async Task<IActionResult> Configure() {
+
+        var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+        var popupSettings = await _settingService.LoadSettingAsync<NewsletterPopupSettings>(storeScope);
+        var model = new ConfigurationModel {
+            ShowNewsletterForm = popupSettings.ShowNewsletterForm,
+            HtmlContent = popupSettings.HtmlContent
+        };
+        await AddLocalesAsync(_languageService, model.Locales, async (locale, languageId) => {
+            locale.HtmlContent = await _localizationService
+                .GetLocalizedSettingAsync(popupSettings, x => x.HtmlContent, languageId, 0, false, false);
+        });
+        if (storeScope > 0) {
+            model.ShowNewsletterForm_OverrideForStore = _settingService.SettingExists(popupSettings, x => x.ShowNewsletterForm, storeScope);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Configure()
-        {
-            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageWidgets))
-                return AccessDeniedView();
+        return View("~/Plugins/Widgets.NewsletterPopup/Views/Configure.cshtml", model);
+    }
 
-            var settings = await _settingService.LoadSettingAsync<Nop.Plugin.Widgets.NewsletterPopup.NewsletterPopupSettings>();
-            var model = new ConfigurationModel
-            {
-                DisplayDelay = settings.DisplayDelay
-            };
+    [HttpPost]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_WIDGETS)]
+    public async Task<IActionResult> Configure(ConfigurationModel model) {
+        if (!ModelState.IsValid)
+            return await Configure();
 
-            var languages = await _workContext.GetAllLanguagesAsync();
-            foreach (var lang in languages)
-            {
-                var html = await _localization_service_getlocalized(settings, lang.Id);
-                model.Locales.Add(new LocalizedHtmlContent { LanguageId = lang.Id, HtmlContent = html ?? "" });
-            }
+        //load settings for a chosen store scope
+        var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+        var popupSettings = _settingService.LoadSetting<NewsletterPopupSettings>(storeScope);
 
-            return View("~/Plugins/Widgets.NewsletterPopup/Views/Configure.cshtml", model);
+        popupSettings.ShowNewsletterForm = model.ShowNewsletterForm;
+        popupSettings.HtmlContent = model.HtmlContent;
+        await _settingService.SaveSettingOverridablePerStoreAsync(popupSettings, x => x.ShowNewsletterForm, model.ShowNewsletterForm_OverrideForStore, storeScope, true);
+        await _settingService.SaveSettingOverridablePerStoreAsync(popupSettings, x => x.HtmlContent, model.HtmlContent_OverrideForStore, storeScope, true);
+        await _settingService.ClearCacheAsync();
+        foreach (var localized in model.Locales) {
+            await _localizationService.SaveLocalizedSettingAsync(popupSettings,
+                x => x.HtmlContent, localized.LanguageId, localized.HtmlContent);
         }
-
-        [HttpPost]
-        public async Task<IActionResult> Configure(ConfigurationModel model)
-        {
-            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageWidgets))
-                return AccessDeniedView();
-
-            var settings = await _settingService.LoadSettingAsync<Nop.Plugin.Widgets.NewsletterPopup.NewsletterPopupSettings>();
-            settings.DisplayDelay = model.DisplayDelay;
-            await _settingService.SaveSettingAsync(settings);
-
-            foreach (var locale in model.Locales)
-            {
-                // in production use _localizationService.SaveLocalizedSettingAsync
-            }
-
-            await _settingService.ClearCacheAsync();
-
-            return RedirectToAction("Configure");
-        }
-
-        // helper stub (use real ILocalizationService in production)
-        private async Task<string> _localization_service_getlocalized(Nop.Plugin.Widgets.NewsletterPopup.NewsletterPopupSettings settings, int languageId)
-        {
-            return await Task.FromResult<string>(null);
-        }
+        _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
+        return RedirectToAction("Configure");
     }
 }

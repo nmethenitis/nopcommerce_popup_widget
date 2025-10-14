@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Stores;
@@ -14,26 +14,21 @@ namespace Nop.Plugin.Widgets.NewsletterPopup.Components
         private readonly ILocalizationService _localizationService;
         private readonly IWorkContext _workContext;
 
-        public NewsletterPopupViewComponent(
-            ISettingService settingService,
-            ILocalizationService localizationService,
-            IWorkContext workContext)
-        {
+        public NewsletterPopupViewComponent(ISettingService settingService, ILocalizationService localizationService, IWorkContext workContext){
             _settingService = settingService;
             _localizationService = localizationService;
             _workContext = workContext;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
-        {
-            var settings = await _settingService.LoadSettingAsync<Nop.Plugin.Widgets.NewsletterPopup.NewsletterPopupSettings>();
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)        {
+            var settings = await _settingService.LoadSettingAsync<NewsletterPopupSettings>();
             var customer = await _workContext.GetCurrentCustomerAsync();
             var languageId = customer?.LanguageId ?? 0;
 
             var localizedHtml = await _localization_service_getlocalized(settings, languageId);
 
-            ViewData["HtmlContent"] = string.IsNullOrWhiteSpace(localizedHtml) ? settings.DefaultHtmlContent : localizedHtml;
-            ViewData["Delay"] = settings.DisplayDelay;
+            ViewData["HtmlContent"] = string.IsNullOrWhiteSpace(localizedHtml) ? settings.HtmlContent : localizedHtml;
+            ViewData["ShowNewsletterForm"] = settings.ShowNewsletterForm;
 
             return View("~/Plugins/Widgets.NewsletterPopup/Views/PublicInfo.cshtml");
         }
